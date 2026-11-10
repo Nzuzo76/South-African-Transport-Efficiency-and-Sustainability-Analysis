@@ -434,16 +434,16 @@ def main():
         nav = st.radio(
             "",
             [
-                "🌍  Overview",
-                "🔍  Data Quality",
-                "📊  Population & GDP",
-                "🚌  Passenger Transport",
-                "🚛  Freight Transport",
-                "🚗  Vehicle Fleet",
-                "⚡  Energy & Efficiency",
-                "📈  Correlations",
-                "🎯  Key Findings",
-                "📚  About & Sources",
+                "  Overview",
+                "  Data Quality",
+                "  Population & GDP",
+                "  Passenger Transport",
+                "  Freight Transport",
+                "  Vehicle Fleet",
+                "  Energy & Efficiency",
+                "  Correlations",
+                "  Key Findings",
+                "  About & Sources",
             ],
         )
 
@@ -459,16 +459,16 @@ def main():
         long = long[long["Notes"].isin(note_sel)]
 
     pages = {
-        "🌍  Overview": view_overview,
-        "🔍  Data Quality": view_data_quality,
-        "📊  Population & GDP": view_pop_gdp,
-        "🚌  Passenger Transport": view_passenger,
-        "🚛  Freight Transport": view_freight,
-        "🚗  Vehicle Fleet": view_fleet,
-        "⚡  Energy & Efficiency": view_energy,
-        "📈  Correlations": view_correlations,
-        "🎯  Key Findings": view_findings,
-        "📚  About & Sources": view_about,
+        "  Overview": view_overview,
+        "  Data Quality": view_data_quality,
+        "  Population & GDP": view_pop_gdp,
+        "  Passenger Transport": view_passenger,
+        "  Freight Transport": view_freight,
+        "  Vehicle Fleet": view_fleet,
+        "  Energy & Efficiency": view_energy,
+        "  Correlations": view_correlations,
+        "  Key Findings": view_findings,
+        "  About & Sources": view_about,
     }
     pages[nav](df_raw, long, years_all)
 
