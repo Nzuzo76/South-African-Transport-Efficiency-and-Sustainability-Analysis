@@ -1,6 +1,7 @@
 # =========================================================
 # South African Transport Efficiency & Sustainability
 # Professional presentation dashboard — brown / charcoal theme
+# Updated: Distinct categorical colors for multi-category charts
 # =========================================================
 
 import io
@@ -35,7 +36,21 @@ STONE        = "#6B5B4A"   # muted stone
 GOLD         = "#B8860B"   # accent
 LINE_GRAY    = "#D8D2CA"
 
-BROWN_SEQ   = [BROWN_DARK, BROWN, BROWN_MID, TAN, SAND, "#E8DFD3"]
+# Curated distinct earthy colors for multi-category charts
+CATEGORICAL_COLORS = [
+    "#3E2C1F",  # Deep Espresso (Dark Brown)
+    "#C05C3E",  # Terracotta (Warm Rust)
+    "#4A6D7C",  # Muted Slate Blue (Cool contrast)
+    "#D19C3A",  # Golden Ochre (Bright warm)
+    "#5C7A4E",  # Olive Green (Natural)
+    "#8C7A6B",  # Taupe (Neutral)
+    "#7B4463",  # Muted Plum
+    "#B87333",  # Copper
+    "#2E5B5A",  # Deep Teal
+    "#9A3B3B",  # Muted Crimson
+]
+
+# For continuous scales (heatmaps)
 BROWN_SCALE = [
     [0.00, "#F5F1EC"],
     [0.25, "#D4C4B0"],
@@ -302,7 +317,6 @@ def styled(fig, height=380, **layout_kwargs):
     fig.update_yaxes(gridcolor=LINE_GRAY, linecolor=LINE_GRAY)
     return fig
 
-
 # ---------------------------------------------------------
 # Loaders
 # ---------------------------------------------------------
@@ -327,7 +341,6 @@ def load_excel(source):
 
     return df, [int(str(y)) for y in year_cols], year_cols
 
-
 @st.cache_data(show_spinner=False)
 def melt(df, year_cols):
     id_cols = [c for c in df.columns if c not in year_cols]
@@ -335,7 +348,6 @@ def melt(df, year_cols):
                    var_name="Year", value_name="Value")
     long["Year"] = long["Year"].apply(lambda v: int(str(v)))
     return long.dropna(subset=["Value"]).reset_index(drop=True)
-
 
 def get_series(long, data_code):
     sub = long[long["Data code"] == data_code].copy()
@@ -345,13 +357,11 @@ def get_series(long, data_code):
     sub = sub.sort_values(["_pref", "Year"]).drop_duplicates("Year", keep="first")
     return sub.sort_values("Year")[["Year", "Value", "Notes", "Unit"]].reset_index(drop=True)
 
-
 def latest_value(series):
     if series.empty:
         return None, None
     row = series.iloc[-1]
     return float(row["Value"]), int(row["Year"])
-
 
 # ---------------------------------------------------------
 # Small UI helpers
@@ -366,19 +376,16 @@ def metric_card(label, value, sub=""):
         unsafe_allow_html=True,
     )
 
-
 def insight(text, kind="default"):
     cls = {"default": "insight",
            "warn": "insight insight-warn",
            "note": "insight insight-note"}.get(kind, "insight")
     st.markdown(f'<div class="{cls}">{text}</div>', unsafe_allow_html=True)
 
-
 def section(title, kicker=None):
     if kicker:
         st.markdown(f'<div class="kicker">{kicker}</div>', unsafe_allow_html=True)
     st.markdown(f'<div class="section-title">{title}</div>', unsafe_allow_html=True)
-
 
 # ---------------------------------------------------------
 # Main
@@ -523,11 +530,11 @@ def view_overview(df_raw, long, years_all):
         st.markdown("**Passenger activity — latest per mode**")
         if not pass_df.empty:
             fig = px.bar(pass_df, x="Value", y="Mode", orientation="h",
-                         text="Year", color="Value",
-                         color_continuous_scale=BROWN_SCALE)
+                         text="Year", color="Mode",
+                         color_discrete_sequence=CATEGORICAL_COLORS)
             fig.update_traces(textposition="outside",
                               textfont=dict(color=BROWN_DARK, size=11))
-            fig.update_layout(coloraxis_showscale=False)
+            fig.update_layout(showlegend=False)
             st.plotly_chart(styled(fig, 340), use_container_width=True)
         else:
             st.info("No passenger data in the selected filter.")
@@ -536,11 +543,11 @@ def view_overview(df_raw, long, years_all):
         st.markdown("**Freight activity — latest per mode**")
         if not fr_df.empty:
             fig = px.bar(fr_df, x="Value", y="Mode", orientation="h",
-                         text="Year", color="Value",
-                         color_continuous_scale=BROWN_SCALE)
+                         text="Year", color="Mode",
+                         color_discrete_sequence=CATEGORICAL_COLORS)
             fig.update_traces(textposition="outside",
                               textfont=dict(color=BROWN_DARK, size=11))
-            fig.update_layout(coloraxis_showscale=False)
+            fig.update_layout(showlegend=False)
             st.plotly_chart(styled(fig, 340), use_container_width=True)
         else:
             st.info("No freight data in the selected filter.")
@@ -552,7 +559,6 @@ def view_overview(df_raw, long, years_all):
         "not as a single-year total.",
         kind="warn",
     )
-
 
 def view_data_quality(df_raw, long, years_all):
     section("Observation status (SDMX)", "Provenance")
@@ -596,7 +602,6 @@ def view_data_quality(df_raw, long, years_all):
         "when precision matters.",
         kind="note",
     )
-
 
 def view_pop_gdp(df_raw, long, years_all):
     section("Population", "Demographics")
@@ -645,12 +650,11 @@ def view_pop_gdp(df_raw, long, years_all):
     if rows:
         df = pd.concat(rows, ignore_index=True)
         fig = px.area(df, x="Year", y="Value", color="Sector",
-                      color_discrete_sequence=BROWN_SEQ)
+                      color_discrete_sequence=CATEGORICAL_COLORS)
         st.plotly_chart(styled(fig, 380, yaxis_title="% of GDP"),
                         use_container_width=True)
     else:
         st.info("No sector GDP data in the selection.")
-
 
 def view_passenger(df_raw, long, years_all):
     section("Passenger activity by mode", "Million passenger-km")
@@ -669,7 +673,7 @@ def view_passenger(df_raw, long, years_all):
         return
 
     fig = px.line(df, x="Year", y="Value", color="Mode", markers=True,
-                  color_discrete_sequence=BROWN_SEQ)
+                  color_discrete_sequence=CATEGORICAL_COLORS)
     fig.update_traces(line=dict(width=2.2))
     st.plotly_chart(styled(fig, 420, yaxis_title="Million passenger-km",
                            hovermode="x unified"),
@@ -678,11 +682,11 @@ def view_passenger(df_raw, long, years_all):
     section("Latest snapshot per mode", "Cross-section")
     latest = df.loc[df.groupby("Mode")["Year"].idxmax()].sort_values("Value")
     fig2 = px.bar(latest, x="Value", y="Mode", orientation="h",
-                  color="Year", text="Year",
-                  color_continuous_scale=BROWN_SCALE)
+                  color="Mode", text="Year",
+                  color_discrete_sequence=CATEGORICAL_COLORS)
     fig2.update_traces(textposition="outside",
                        textfont=dict(color=BROWN_DARK, size=11))
-    fig2.update_layout(coloraxis_showscale=False)
+    fig2.update_layout(showlegend=False)
     st.plotly_chart(styled(fig2, 340, xaxis_title="Million passenger-km"),
                     use_container_width=True)
 
@@ -703,7 +707,6 @@ def view_passenger(df_raw, long, years_all):
         "(≈116,100 M) — while making up only about 5% of the vehicle fleet.",
     )
 
-
 def view_freight(df_raw, long, years_all):
     section("Freight activity by mode", "Million tonne-km")
 
@@ -721,7 +724,7 @@ def view_freight(df_raw, long, years_all):
         return
 
     fig = px.line(df, x="Year", y="Value", color="Mode", markers=True,
-                  color_discrete_sequence=BROWN_SEQ)
+                  color_discrete_sequence=CATEGORICAL_COLORS)
     fig.update_traces(line=dict(width=2.2))
     st.plotly_chart(styled(fig, 420, yaxis_title="Million tonne-km",
                            hovermode="x unified"),
@@ -729,11 +732,11 @@ def view_freight(df_raw, long, years_all):
 
     latest = df.loc[df.groupby("Mode")["Year"].idxmax()].sort_values("Value")
     fig2 = px.bar(latest, x="Value", y="Mode", orientation="h",
-                  color="Year", text="Year",
-                  color_continuous_scale=BROWN_SCALE)
+                  color="Mode", text="Year",
+                  color_discrete_sequence=CATEGORICAL_COLORS)
     fig2.update_traces(textposition="outside",
                        textfont=dict(color=BROWN_DARK, size=11))
-    fig2.update_layout(coloraxis_showscale=False)
+    fig2.update_layout(showlegend=False)
     st.plotly_chart(styled(fig2, 340, xaxis_title="Million tonne-km"),
                     use_container_width=True)
 
@@ -760,7 +763,6 @@ def view_freight(df_raw, long, years_all):
             "decarbonisation lever for South African freight.",
         )
 
-
 def view_fleet(df_raw, long, years_all):
     section("Vehicle stock", "Fleet overview")
 
@@ -778,7 +780,7 @@ def view_fleet(df_raw, long, years_all):
         return
 
     fig = px.line(df, x="Year", y="Value", color="Mode", markers=True,
-                  color_discrete_sequence=BROWN_SEQ)
+                  color_discrete_sequence=CATEGORICAL_COLORS)
     fig.update_traces(line=dict(width=2.2))
     st.plotly_chart(styled(fig, 420, yaxis_title="Vehicles",
                            hovermode="x unified"),
@@ -810,14 +812,13 @@ def view_fleet(df_raw, long, years_all):
     section("Latest fleet composition", "By vehicle type")
     latest = df.loc[df.groupby("Mode")["Year"].idxmax()].sort_values("Value")
     fig2 = px.bar(latest, x="Value", y="Mode", orientation="h",
-                  color="Year", text="Year",
-                  color_continuous_scale=BROWN_SCALE)
+                  color="Mode", text="Year",
+                  color_discrete_sequence=CATEGORICAL_COLORS)
     fig2.update_traces(textposition="outside",
                        textfont=dict(color=BROWN_DARK, size=11))
-    fig2.update_layout(coloraxis_showscale=False)
+    fig2.update_layout(showlegend=False)
     st.plotly_chart(styled(fig2, 340, xaxis_title="Vehicles"),
                     use_container_width=True)
-
 
 def view_energy(df_raw, long, years_all):
     section("Energy intensity", "MJ per passenger-km")
@@ -833,7 +834,7 @@ def view_energy(df_raw, long, years_all):
     if rows:
         df = pd.concat(rows, ignore_index=True)
         fig = px.bar(df, x="Vehicle", y="Value", color="Vehicle",
-                     text="Year", color_discrete_sequence=BROWN_SEQ,
+                     text="Year", color_discrete_sequence=CATEGORICAL_COLORS,
                      labels={"Value": "MJ / passenger-km"})
         fig.update_traces(textposition="outside",
                           textfont=dict(color=BROWN_DARK, size=11))
@@ -866,7 +867,7 @@ def view_energy(df_raw, long, years_all):
     if rows:
         df2 = pd.concat(rows, ignore_index=True)
         fig = px.bar(df2, x="Vehicle", y="Value", color="Vehicle",
-                     text="Year", color_discrete_sequence=BROWN_SEQ,
+                     text="Year", color_discrete_sequence=CATEGORICAL_COLORS,
                      labels={"Value": "MJ / vehicle-km"})
         fig.update_traces(textposition="outside",
                           textfont=dict(color=BROWN_DARK, size=11))
@@ -885,13 +886,12 @@ def view_energy(df_raw, long, years_all):
     if rows:
         df3 = pd.concat(rows, ignore_index=True)
         fig = px.bar(df3, x="Vehicle", y="Value", color="Vehicle",
-                     text="Year", color_discrete_sequence=BROWN_SEQ,
+                     text="Year", color_discrete_sequence=CATEGORICAL_COLORS,
                      labels={"Value": "passengers / vehicle"})
         fig.update_traces(textposition="outside",
                           textfont=dict(color=BROWN_DARK, size=11))
         fig.update_layout(showlegend=False)
         st.plotly_chart(styled(fig, 340), use_container_width=True)
-
 
 def view_correlations(df_raw, long, years_all):
     section("GDP and population", "Trend relationship")
@@ -950,7 +950,6 @@ def view_correlations(df_raw, long, years_all):
 def view_findings(df_raw, long, years_all):
     section("Key findings", "Summary of the data")
 
-    # Curated findings with computed values
     pop = get_series(long, "POP_TOT")
     gdp = get_series(long, "GDP_TOT")
 
