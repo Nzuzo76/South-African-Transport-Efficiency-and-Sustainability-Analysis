@@ -211,7 +211,7 @@ st.markdown(f"""
 # ---------------------------------------------------------
 # Constants
 # ---------------------------------------------------------
-DEFAULT_FILE = "TSDK_South Africa.xlsx"
+DEFAULT_FILE = "data/TSDK_South Africa.xlsx"
 
 NOTE_PREF = {"A": 1, "P": 2, "E": 3, "I": 4, "U": 5, "V": 6}
 NOTE_LABEL = {
